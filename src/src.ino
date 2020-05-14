@@ -10,8 +10,8 @@
 #define TAG_LENGTH 14
 #define HOST_NAME "cardreader"
 #define DISPLAY_NAME "ESP RFID Card Reader"
-#define PASSWORD "esprfid"
 #define SERIAL_DEBUG true
+#define BUZZER_PIN 4
 
 SoftwareSerial mySerial(5, 6); // RX, TX
 
@@ -113,6 +113,12 @@ void flushSerial () {
 
 }
 
+void buzz() {
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(150);
+  digitalWrite(BUZZER_PIN, 0);
+}
+
 void readTag() {
   if (mySerial.available()) {
     char buf[TAG_LENGTH];
@@ -131,7 +137,7 @@ void readTag() {
       log("[READ] Read failed, incomplete packet.");
       Serial.println(buf);
       return;
-    }
+    }e
 
     buf[13] = 0; // null terminate it for convenience if we want to print it
 
@@ -157,7 +163,8 @@ void readTag() {
       log("[READ] Successfully read card: " + String(cardId));
       Serial.println("c:" + String(cardId));
       webSocket.sendTXT(0, "c:" + String(cardId));
-      delay(2000);
+      buzz();
+      delay(1000);
       flushSerial();
     } else {
       log("[READ] Read failed, checksum is invalid. ");
@@ -167,6 +174,8 @@ void readTag() {
 }
 
 void setup() {
+  pinMode(BUZZER_PIN, OUTPUT);
+  buzz();
   mySerial.begin(9600);
   Serial.begin(115200);
   Serial.println();
@@ -185,7 +194,7 @@ void setup() {
 
 
   ArduinoOTA.setHostname(HOST_NAME);
-  ArduinoOTA.setPassword(PASSWORD);
+  ArduinoOTA.setPassword(OTA_PASS);
 
   ArduinoOTA.onStart([]() {
     Serial.println("[OTA] Start");
@@ -233,6 +242,9 @@ void setup() {
 
   http.begin();
 
+  buzz();
+  delay(100);
+  buzz();
   Serial.println("\nSetup Done");
 }
 
